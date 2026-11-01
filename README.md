@@ -1,110 +1,154 @@
+<p align="center">
+  <img src="./public/icon.svg" width="80" height="80" alt="Birchize Logo">
+</p>
+
 # Birchize
 
-一间安静、轻盈的本地文件工作室。Designed & developed by **Vargking**.
+**你的文件，只在你的设备上处理。**
 
-React + TypeScript + Vite；桌面与移动端适配，花与桦木元素的代码绘制 Logo，支持中文、English、Español、日本語、한국어、Русский、Filipino、Bahasa Melayu。
+Birchize 是一款在浏览器中运行的本地文件工具箱，集格式转换、媒体压缩、SVG 编辑、压缩包管理与开发工具于一体。无需账号，无需上传文件；完成首次资源缓存后，可离线使用。
 
-## 使用与隐私
+以花与桦木为灵感的品牌设计，配合简洁的界面与轻量动效，为桌面和移动设备提供统一的文件处理体验。
 
-- 选择或拖入多个文件后，会显示添加成功提示和文件信息。这里的“添加”只发生在浏览器内，不会把文件传给服务器。
-- 新文件默认勾选，可逐项勾选／全选、继续追加、逐项删除。转换按钮标明本次处理数量；文档与媒体预览和处理勾选相互独立。
-- 图片、媒体、文档、文件加解密、Base64／Hash 文件处理及压缩包创建只处理勾选文件。SVG 为逐文件切换编辑，压缩包浏览为逐包打开。
-- 每次处理独立成批，包含时间、状态、输入／输出数量；支持单项下载和本批次 ZIP 下载。单文件失败不会阻止其余文件继续处理。
-- 每个结果历史最多保留 8 批，按 200 MB 预算优先移除完整旧批次；最新批次始终保留，可能超过预算。结果仅在页面内存中，刷新会清空；切换工具会重置该工具的工作区，首页仍可下载当前会话的最近结果。请及时下载保存。
-- 首次打开显示使用教程，完成后不再自动弹出；语言与教程偏好保存在本机。
+Designed & developed by **Vargking**.
 
-## 已实现的格式与边界
+## 特性
 
-不是“任意格式无条件互转”。实际能力取决于浏览器、文件编码和随项目打包的本地引擎。
+- **本地处理**：文件读取、转换、预览与加解密均在浏览器内完成，不发送到服务器。
+- **批量工作流**：支持拖放、多选、追加、删除、逐项勾选与全选，处理按钮显示本次选中文件数量。
+- **清晰的处理反馈**：添加文件后显示提示和文件信息；处理结果按批次呈现，支持单项下载与本批次 ZIP 下载。
+- **目标大小压缩**：图片可设置目标大小，例如 200 KB，结合编码质量与尺寸调整控制体积。
+- **离线可用**：生产版本缓存应用与本地转换引擎，运行时不依赖 CDN。
+- **多端、多语言**：适配桌面与移动端，支持中文、English、Español、日本語、한국어、Русский、Filipino、Bahasa Melayu。
 
-| 工具 | 功能 | 说明 |
-| --- | --- | --- |
-| 图片 | 常见 JPG、PNG、WebP、SVG、BMP、TIFF、ICO、GIF 等输入；输出 JPG、PNG、WebP、AVIF、BMP、ICO | AVIF 编解码依浏览器而定；GIF 等动态图按静态帧处理；图片不超过 4000 万像素 |
-| 图片压缩 | 目标大小（如 200 KB）、质量、尺寸、透明背景填充 | 优先调整编码质量，再按需缩小尺寸；极低目标无法同时保证原始清晰度，未达目标会提示 |
-| 视频／音频 | 视频输出 MP4、MOV、MKV、WebM、AVI、TS、GIF；音频输出 MP3、WAV、FLAC、AAC、M4A、OGG、Opus、AIFF | 本地 FFmpeg WASM；支持提取音轨、分辨率与码率调整、压缩；输入依本地解码器，不支持 DRM；建议视频小于 200 MB |
-| 文档 | DOCX／TXT／MD／HTML／CSV／JSON／XML／LOG 等转 PDF、TXT、HTML；PDF 提取文本或逐页 PNG | DOCX 转 PDF 为本地重排，复杂布局可能变化；Markdown 按文本读取；不支持旧版 DOC／XLS／PPT，也不是无损 PDF 转 Word；PDF 最大 30 MB、100 页 |
-| SVG | 源码实时编辑、自由绘制、形状与颜色、SVG／PNG 导出 | SVG 转位图不保留矢量可编辑性；不宣称已有位图自动矢量化 |
-| 压缩包 | 多文件创建 ZIP、7Z、TAR、TAR.GZ、TAR.BZ2、TAR.XZ；浏览、预览与逐项提取 ZIP／7Z／RAR／TAR 等 | 创建最多 50 文件、256 MB；加密创建仅 ZIP AES-256；其他加密包能否读取依 libarchive 的具体支持，并非支持所有格式／加密方式；条目提取最大 128 MB，文本／图片预览最大 2 MB |
-| 文件加解密 | AES-256-GCM、AES-256-CBC + HMAC-SHA256、AES-256-CTR + HMAC-SHA256 | PBKDF2 派生密钥；`.birch` 为本应用封装格式，不与任意第三方加密文件互通；每文件最大 128 MB；密码丢失无法恢复 |
-| 开发工具 | Base64、URL 编解码、JSON 格式化／压缩、UUID、MD5／SHA／SHA3／BLAKE2b／BLAKE3／RIPEMD-160／CRC32／xxHash64／SM3 | 文件 Base64／Hash 每文件最大 32 MB；MD5／SHA-1／CRC／xxHash 不用于密码存储或安全签名 |
+## 功能概览
 
-### 离线使用
+| 工具 | 支持的操作 |
+| --- | --- |
+| 图片工坊 | 读取 JPG、PNG、WebP、SVG、BMP、TIFF、ICO、GIF 等图片；输出 JPG、PNG、WebP、AVIF、BMP、ICO；调整质量、尺寸、背景色与目标大小 |
+| 音频与视频 | 本地 FFmpeg 转码、提取音轨、调整视频分辨率与音频码率、媒体压缩；视频输出 MP4、MOV、MKV、WebM、AVI、TS、GIF；音频输出 MP3、WAV、FLAC、AAC、M4A、OGG、Opus、AIFF |
+| 文档转换 | DOCX 与常见文本类文件转 PDF、TXT、HTML；提取 PDF 文本，或将 PDF 逐页导出为 PNG |
+| SVG 编辑器 | 源码实时预览、自由绘制、基础形状与颜色编辑，导出 SVG 或 PNG |
+| 压缩包管理 | 多文件创建 ZIP、7Z、TAR、TAR.GZ、TAR.BZ2、TAR.XZ；浏览 ZIP、7Z、RAR、TAR 等压缩包，预览与按需提取条目；ZIP 支持 AES-256 加密创建 |
+| 文件加解密 | AES-256-GCM、AES-256-CBC + HMAC-SHA256、AES-256-CTR + HMAC-SHA256；使用 PBKDF2 派生密钥 |
+| 开发者工具 | Base64、URL 编解码，JSON 格式化与压缩，UUID；支持文本／文件 Hash，包括 MD5、SHA、SHA3、BLAKE2b、BLAKE3、RIPEMD-160、CRC32、xxHash64、SM3 |
 
-生产版本通过 Service Worker 缓存应用、转换引擎、字体与其他本地资源。首次访问仍需联网下载这些资源；等界面显示“已可离线使用”后，可断网继续使用。首次缓存包含较大的 FFmpeg WASM，请等待完成。清除网站数据、浏览器回收缓存或更换设备后需要重新缓存。
+具体输入格式会显示在对应工具的文件选择区。能否转换还取决于文件内部编码、浏览器能力和本地引擎支持，并非任意格式之间都能互转。
 
-Service Worker 与 Web Crypto 需要 HTTPS 或 localhost。不要双击 `dist/index.html` 使用。开发模式不注册离线缓存；请用构建后的预览服务器验证离线。项目无运行时 CDN、外部字体、统计上报或文件上传接口；依赖下载使用 `.npmrc` 配置的中国 npm 镜像。
+## 使用方法
+
+1. 选择工具，拖入文件或点击选择文件。文件只会添加到当前浏览器，不会上传。
+2. 查看文件信息，勾选需要处理的文件，设置输出格式与处理参数。
+3. 开始处理，在对应批次中预览或下载结果。支持的批处理工具可将本批次结果打包为 ZIP。
+
+图片、媒体、文档、文件加解密、文件 Base64／Hash 和压缩包创建支持批量处理；SVG 编辑为逐文件切换，压缩包浏览为逐包打开。可预览工具中的预览操作与批量勾选相互独立。
+
+首次打开会展示使用引导，完成后不再自动弹出。语言和引导偏好保存在本机。
+
+### 结果保存
+
+文件和处理结果保存在当前页面内存中，刷新或关闭页面会清空，请及时下载。切换工具会重置该工具的工作区，当前会话的最近结果仍可从首页下载。
+
+每个结果历史最多保留 8 个批次，按 200 MB 预算优先移除完整旧批次；最新批次始终保留，可能超过该预算。
+
+## 离线与隐私
+
+首次访问需要联网下载应用和转换引擎。等待界面显示离线就绪后，即可断网使用；首次缓存包含较大的 FFmpeg WASM，完成前请保持页面打开。清除网站数据、浏览器回收缓存或更换设备后，需要重新缓存。
+
+离线缓存使用 Service Worker，文件加解密使用 Web Crypto，因此请通过 **HTTPS 或 localhost** 访问。开发模式不注册离线缓存；离线测试需使用生产构建。
+
+项目没有文件上传接口、统计上报、运行时 CDN 或外部字体请求。网站托管服务仍会接收首次加载和资源更新时的正常网络请求，但文件内容不随这些请求发送。
+
+## 支持范围与注意事项
+
+- **图片**：AVIF 编解码依赖浏览器；动态图按静态帧处理，多页 TIFF 仅读取首帧。目标大小过低时可能需要缩小尺寸，无法同时保证任意体积与原始清晰度；未达到目标会显示提示。
+- **媒体**：输入支持取决于本地 FFmpeg 的解码器，不支持 DRM 内容。转码速度和可处理大小受设备性能与浏览器内存影响，建议视频文件小于 200 MB。
+- **文档**：DOCX 转 PDF 使用本地重排，复杂版式可能变化；Markdown 按文本读取。不支持旧版 DOC／XLS／PPT，也不提供无损 PDF 转 Word。
+- **SVG**：支持 SVG 编辑和栅格化导出，不提供位图自动矢量化；导出 PNG 后不再保留矢量可编辑性。
+- **压缩包**：密码加密创建仅支持 ZIP。其他格式的读取、密码与分卷支持取决于 libarchive，不能保证兼容所有压缩格式和加密方式。
+- **加解密**：`.birch` 是 Birchize 的封装格式，不能直接解密任意第三方加密文件。密码不会上传，丢失后无法恢复。
+- **Hash**：MD5、SHA-1、CRC、xxHash 适用于兼容或校验场景，不应用于密码存储或安全签名。
+
+为控制浏览器内存占用，当前设有以下处理限制：
+
+| 操作 | 限制 |
+| --- | --- |
+| 图片处理 | 单张不超过 4000 万像素 |
+| PDF 处理 | 单文件不超过 30 MB、100 页 |
+| 创建压缩包 | 最多 50 个文件，总大小不超过 256 MB |
+| 压缩包提取 | 单条目不超过 128 MB；批量提取总大小不超过 256 MB |
+| 压缩包文本／图片预览 | 单条目不超过 2 MB |
+| 文件加解密 | 单文件不超过 128 MB |
+| 文件 Base64／Hash | 单文件不超过 32 MB |
 
 ## 本地开发
 
-安装 Node.js 22.12+（推荐 22 LTS）和 Git，然后在 PowerShell 执行：
+环境要求：Node.js 22.12+ 和 npm。
 
-```powershell
-cd D:\LunWen\Birchize
+获取仓库源码并进入项目目录后执行：
+
+```sh
 npm ci
-npm run dev -- --port 5174 --strictPort
+npm run dev
 ```
 
-浏览器打开 <http://localhost:5174/>。
+打开终端输出的本地地址。
 
-```powershell
+依赖安装使用 [`.npmrc`](.npmrc) 配置的中国 npm 镜像。`npm ci` 的 `postinstall` 会将 FFmpeg、libarchive 和 PDF 引擎准备到 `public/engines/`，该目录无需提交到版本控制。若安装时跳过了脚本，请另行执行 `npm run prepare:engines`。
+
+### 构建与预览
+
+```sh
+npm run build
+npm run preview
+```
+
+构建产物位于 `dist/`，包含本地转换引擎和生成的离线缓存脚本。请通过预览服务器或静态托管访问，不要直接双击 `dist/index.html`。
+
+### 测试
+
+```sh
 npm test
 npm run test:e2e
 npm run test:pages
-npm run build
-npm run preview -- --port 4174 --strictPort
 ```
 
-端到端测试使用本机 Microsoft Edge；没有安装 Edge 时先安装浏览器，或调整 `playwright.config.ts` / `playwright.pages.config.ts` 的浏览器配置。`test:pages` 会先构建，再模拟 `/Birchize/` 子目录与断网重载，检查图片转换、7Z 创建／浏览、WAV 转 MP3、PDF 文本提取的离线引擎。GitHub Pages 工作流执行单元测试与生产构建，不依赖 Edge。
+- `test`：运行单元测试。
+- `test:e2e`：验证批量选择、文件反馈、压缩包操作和 SVG 实时编辑等交互。
+- `test:pages`：先构建生产版本，再验证 `/Birchize/` 子目录下的断网重载、图片转换、7Z 创建／浏览、WAV 转 MP3 和 PDF 文本提取。
 
-`npm ci` 的 `postinstall` 自动将 FFmpeg、libarchive、PDF 引擎准备到 `public/engines/`。该目录不提交 Git；CI 会重新生成。不要使用 `npm ci --ignore-scripts`，否则需自行执行 `npm run prepare:engines`。
+端到端测试默认使用本机 Microsoft Edge。其他浏览器可在 [`playwright.config.ts`](playwright.config.ts) 和 [`playwright.pages.config.ts`](playwright.pages.config.ts) 中配置。
 
-## 第一次推送到 GitHub
+## 部署
 
-1. 在 GitHub 新建一个名为 `Birchize` 的空仓库，建议选 Public。**不要勾选初始化 README、.gitignore 或 License**，避免与本地首次提交冲突。
-2. 在仓库的 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**，不是 Deploy from a branch。
-3. 以下命令适用于本目录尚未初始化 Git、远端为空的情况。把 `YOUR_USERNAME` 换成你的 GitHub 用户名；仓库名不同时同时替换 URL 中的 `Birchize`。
+Birchize 是纯静态 Web 应用，无需后端服务。将 `dist/` 部署到支持 HTTPS 的静态托管即可。资源使用相对路径，页面使用 hash 路由，可部署在站点根目录或子目录。
 
-```powershell
-cd D:\LunWen\Birchize
-git init
-git add .
-git commit -m "Initial Birchize release"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/Birchize.git
-git push -u origin main
-```
+仓库包含 [GitHub Pages 工作流](.github/workflows/deploy.yml)：
 
-如果 `git commit` 提示未设置身份，在当前仓库执行以下命令，再重新执行提交与后续步骤。邮箱可以用 GitHub 提供的 noreply 地址。
+1. 在仓库的 **Settings → Pages → Build and deployment → Source** 中选择 **GitHub Actions**。
+2. 向 `main` 分支推送代码，或从 Actions 页面手动运行工作流。
+3. 工作流自动安装依赖、运行单元测试、构建并部署；站点地址可在部署任务或 Pages 设置中查看。
 
-```powershell
-git config user.name "你的名字"
-git config user.email "你的GitHub邮箱"
-```
+工作流使用内置 `GITHUB_TOKEN`，无需单独配置 PAT 或维护 `gh-pages` 分支。
 
-推送时按 Git Credential Manager 提示在浏览器登录。不要把 GitHub 登录密码当成 Git HTTPS 密码；也不要把访问令牌发到聊天或提交到仓库。
+## 参与贡献
 
-### 自动部署 Pages
+欢迎通过 Issue 反馈问题或提出功能建议，也欢迎提交 Pull Request。
 
-已提供 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)。每次推送 `main`，依次安装依赖、测试、构建离线资源、上传 `dist` 并部署；也可在仓库 **Actions → Deploy Birchize to GitHub Pages → Run workflow** 手动触发。部署使用仓库内置 `GITHUB_TOKEN`，不需要另建 PAT 或手动创建 `gh-pages` 分支。
+报告转换问题时，请提供浏览器与操作系统、输入／输出格式、复现步骤和报错信息。如需提供示例文件，请先移除个人信息、密码及其他敏感内容。
 
-部署完成后，在 Actions 的 deploy 任务或 Settings → Pages 查看真实站点地址。普通项目仓库通常为 `https://YOUR_USERNAME.github.io/Birchize/`；用户名主页仓库或自定义域名地址不同。Vite 使用相对资源路径、页面使用 hash 路由，无需将仓库名硬编码进源码。
+提交改动前请运行相关测试；涉及转换引擎、资源路径或缓存策略的修改，建议同时运行 `npm run test:pages` 验证生产离线行为。
 
-GitHub 官方说明：[自定义 Pages 工作流](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)。
+## 技术与致谢
 
-### 之后更新
+界面基于 React、TypeScript 和 Vite。文件处理使用浏览器 API，以及 FFmpeg WASM、libarchive.js、zip.js、PDF.js、jsPDF、Mammoth、hash-wasm、UTIF、DOMPurify、html2canvas 等项目。
 
-```powershell
-git add .
-git commit -m "Update Birchize"
-git push
-```
+品牌 Logo 与界面图标使用 SVG／代码绘制。第三方依赖及锁定版本见 [`package.json`](package.json) 与 [`package-lock.json`](package-lock.json)；本地引擎准备及 libarchive worker 补丁见 [`scripts/engines.mjs`](scripts/engines.mjs)。
 
-推送前可用 `git status` 和 `git diff --cached` 检查待上传内容。不要提交私人文件、密码或令牌。`.gitignore` 已排除依赖、构建产物、本地引擎和测试截图。
+## 许可证
 
-如果提示 `remote origin already exists`，先用 `git remote -v` 检查地址；只有确认需要更改时再使用 `git remote set-url origin ...`。如果提示远端已有提交，不要直接 `--force` 覆盖，请先确认远端内容并合并。
+开发者：**Vargking**。
 
-## 许可证与第三方依赖
+当前仓库尚未为原创应用代码指定开源许可证；在添加 `LICENSE` 前，不应将公开可见视为已授予开源许可。
 
-开发者：Vargking。当前尚未为原创应用代码指定开源许可证；公开仓库不等于授予开源许可，正式作为开源项目发布前需要选择并添加 `LICENSE`。
-
-第三方依赖遵循各自许可证，不能将整个发布包笼统标为 MIT。尤其 `@ffmpeg/core@0.12.10` 标注为 **GPL-2.0-or-later**，与 MIT 的 FFmpeg JavaScript 包装层不同；重新分发其 WASM 时应核对对应源码、构建配置、许可证与所含编解码器的分发要求。依赖版本与来源见 `package-lock.json`，本地 libarchive worker 的补丁见 `scripts/engines.mjs`。
+第三方依赖遵循各自许可证。其中 `@ffmpeg/core@0.12.10` 标注为 **GPL-2.0-or-later**，与 FFmpeg JavaScript 包装层的 MIT 许可证不同；发布包不能笼统视为全部采用 MIT。分发相关 WASM 时，请核对其许可证、对应源码与构建配置要求。
