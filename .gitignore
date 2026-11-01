@@ -1,0 +1,9 @@
+node_modules/
+dist/
+public/engines/
+test-results/
+test-results-pages/
+playwright-report/
+*.local
+*.tsbuildinfo
+.DS_Store
