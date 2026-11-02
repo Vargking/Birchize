@@ -30,7 +30,7 @@ try {
     'getEntryName:this.cwrap("archive_entry_pathname_utf8","string",["number"])'));
 }
 catch (error) { console.error('Cannot vendor archive engine:', error); process.exitCode = 1; }
-console.log('Local conversion engines prepared. No runtime CDN required.');
+console.log('Local conversion engines prepared for offline use and China-mirror fallback.');
 for (const name of ['cmaps', 'standard_fonts', 'wasm']) {
   await cp(path.join(root, 'node_modules/pdfjs-dist', name), path.join(dest, 'pdf', name), { recursive: true });
 }

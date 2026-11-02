@@ -9,6 +9,8 @@ import { Select } from "./components/Controls";
 import type { Result, ConversionPreset } from "./components/Shared";
 import { download, formatSize, inferTool } from "./lib/files";
 import { groupResults, retainRecentResults } from "./lib/batches";
+import { useOfflineCache } from "./lib/offline";
+import OfflineLoading, { CacheProgress, CacheFailures } from "./components/OfflineLoading";
 const Images = lazy(() => import("./panels/Images"));
 const Media = lazy(() => import("./panels/Media"));
 const Documents = lazy(() => import("./panels/Documents"));
@@ -371,10 +373,10 @@ function App() {
     [recent, setRecent] = useState<Result[]>([]),
     [search, setSearch] = useState(""),
     [menu, setMenu] = useState(false),
-    [help, setHelp] = useState(false),
-    [offline, setOffline] = useState<"loading" | "ready" | "error" | "dev">(
-      import.meta.env.DEV ? "dev" : "loading",
-    );
+    [help, setHelp] = useState(false);
+  const { state: offlineState, retry: retryCache } = useOfflineCache();
+  const offline = offlineState.phase;
+  const [cacheDismissed, setCacheDismissed] = useState(false);
   const searchInput = useRef<HTMLInputElement>(null),
     dialog = useRef<HTMLDialogElement>(null);
   const [preset, setPreset] = useState<ConversionPreset>();
@@ -431,36 +433,6 @@ function App() {
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, []);
-  useEffect(() => {
-    if (import.meta.env.DEV) return;
-    if (!("serviceWorker" in navigator)) {
-      setOffline("error");
-      return;
-    }
-    let active = true;
-    const message = (e: MessageEvent) => {
-      if (e.data?.type === "OFFLINE_READY" && active) setOffline("ready");
-    };
-    navigator.serviceWorker.addEventListener("message", message);
-    navigator.serviceWorker
-      .register(`${import.meta.env.BASE_URL}sw.js`)
-      .then((reg) => {
-        if (reg.active && active) setOffline("ready");
-        reg.addEventListener("updatefound", () => {
-          reg.installing?.addEventListener("statechange", () => {
-            if (reg.installing?.state === "redundant" && active)
-              setOffline("error");
-          });
-        });
-      })
-      .catch(() => {
-        if (active) setOffline("error");
-      });
-    return () => {
-      active = false;
-      navigator.serviceWorker.removeEventListener("message", message);
-    };
   }, []);
   useEffect(() => {
     if (help) dialog.current?.showModal();
@@ -889,13 +861,13 @@ function App() {
                 <span className="footer-dot">·</span>
                 <button
                   className={`offline-label ${offline === "error" ? "cache-error" : ""}`}
-                  onClick={() => setHelp(true)}
+                  onClick={() => offline === "ready" || offline === "dev" ? setHelp(true) : setCacheDismissed(false)}
                 >
                   <span className="status-dot" />
                   {t(
                     offline === "ready"
                       ? "offline"
-                      : offline === "loading"
+                      : offline === "caching" || offline === "checking"
                         ? "caching"
                         : offline === "error"
                           ? "cacheError"
@@ -959,20 +931,24 @@ function App() {
                       : "caching",
               )}
             </p>
-            {offline === "error" && (
+            {offline !== "dev" && offline !== "ready" && (
               <button
                 className="button small"
-                onClick={() => location.reload()}
+                onClick={retryCache}
               >
-                Retry
+                {t("cacheRetry")}
               </button>
             )}
           </div>
+          {offline !== "dev" && <CacheProgress state={offlineState} />}
+          <CacheFailures state={offlineState} />
           <div className="dialog-credit">
             Birchize v1.0 · Designed & developed by Vargking
           </div>
         </dialog>
-        <Tutorial />
+        {(offline === "dev" || offline === "ready" || cacheDismissed) && <Tutorial />}
+        {offline !== "dev" && offline !== "ready" && !cacheDismissed &&
+          <OfflineLoading state={offlineState} retry={retryCache} onContinue={() => setCacheDismissed(true)} />}
         {fileFeedback && (
           <div className="file-success-toast" key={fileFeedback.id} role="status" aria-live="polite" aria-atomic="true">
             <span className="toast-check"><Icon name="check" size={19} /></span>

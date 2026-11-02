@@ -6,41 +6,48 @@ async function walk(dir) {
   const nested = await Promise.all(entries.map(e => e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]));
   return nested.flat();
 }
-const files = (await walk('dist')).filter(f => !f.endsWith('sw.js'));
+const files = (await walk('dist')).filter(f => !f.endsWith('sw.js')).sort();
+const template = await readFile(new URL('./service-worker.js', import.meta.url), 'utf8');
 const hash = createHash('sha256');
 hash.update(await readFile(new URL(import.meta.url)));
-for (const file of files) hash.update(await readFile(file));
-const version = 'birchize-' + hash.digest('hex').slice(0, 12);
-const urls = files.map(f => './' + path.relative('dist', f).replaceAll('\\', '/'));
-await writeFile('dist/sw.js', `
-const CACHE = ${JSON.stringify(version)};
-const FILES = ${JSON.stringify(['./', ...urls])};
-self.addEventListener('install', event => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE);
-    try { for (const url of FILES) { await cache.add(new Request(url, {cache: 'reload'})); } }
-    catch(error) { await caches.delete(CACHE); throw error; }
-    await self.skipWaiting();
-  })());
-});
-self.addEventListener('activate', event => {
-  event.waitUntil((async () => {
-    for (const key of await caches.keys()) if(key.startsWith('birchize-') && key !== CACHE) await caches.delete(key);
-    await self.clients.claim();
-    for (const client of await self.clients.matchAll()) client.postMessage({type:'OFFLINE_READY'});
-  })());
-});
-self.addEventListener('fetch', event => {
-  if(event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
-  event.respondWith((async () => {
-    const cache = await caches.open(CACHE);
-    // These are public, same-origin static assets. A server's Vary: Origin
-    // must not distinguish precache requests from module/CSS CORS requests.
-    const cached = await cache.match(event.request, {ignoreSearch: true, ignoreVary: true});
-    if(cached) return cached;
-    if(event.request.mode === 'navigate') return (await cache.match('./index.html')) || fetch(event.request);
-    return fetch(event.request);
-  })());
-});
-`);
-console.log(`Offline cache: ${urls.length} local assets, including media and archive engines.`);
+hash.update(template);
+const assets = [];
+const versions = {};
+for (const name of ['@ffmpeg/core', 'libarchive.js', 'pdfjs-dist']) {
+  versions[name] = JSON.parse(await readFile(path.join('node_modules', name, 'package.json'), 'utf8')).version;
+}
+function mirrorPath(url) {
+  if (url.startsWith('./engines/ffmpeg-core.'))
+    return ['@ffmpeg/core', `dist/esm/${path.posix.basename(url)}`];
+  if (url.startsWith('./engines/pdf/')) return ['pdfjs-dist', url.slice('./engines/pdf/'.length)];
+  // The browser worker is patched locally; never replace it with upstream code.
+  if (url === './engines/archive/libarchive.wasm') return ['libarchive.js', 'dist/libarchive.wasm'];
+  if (/^\.\/assets\/pdf\.worker\.min-.*\.mjs$/.test(url)) return ['pdfjs-dist', 'build/pdf.worker.min.mjs'];
+}
+for (const file of files) {
+  const bytes = await readFile(file);
+  const url = './' + path.relative('dist', file).replaceAll('\\', '/');
+  hash.update(url);
+  hash.update(bytes);
+  const mirrored = mirrorPath(url);
+  const sources = [];
+  if (mirrored) {
+    const [name, entry] = mirrored;
+    // Only publish mirror URLs when the installed package matches the artifact
+    // byte-for-byte. Locally patched/transformed resources stay same-origin.
+    const original = await readFile(path.join('node_modules', name, entry));
+    if (bytes.equals(original)) sources.push(
+      `https://registry.npmmirror.com/${name}/${versions[name]}/files/${entry}`,
+      `https://cdn.npmmirror.com/packages/${name}/${versions[name]}/files/${entry}`,
+    );
+  }
+  assets.push({ url, bytes: bytes.byteLength, hash: createHash('sha256').update(bytes).digest('hex'), sources });
+}
+const version = hash.digest('hex').slice(0, 12);
+// Scope the cache to this project, not all projects on a shared github.io host.
+const prefix = "'birchize-' + encodeURIComponent(new URL(self.registration.scope).pathname) + '-'";
+await writeFile('dist/sw.js', template
+  .replace('__CACHE_NAME__', `${prefix} + ${JSON.stringify(version)}`)
+  .replace('__CACHE_PREFIX__', prefix)
+  .replace('__OFFLINE_ASSETS__', JSON.stringify(assets)));
+console.log(`Offline cache: ${assets.length} local assets, resumable with verified download progress.`);

@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+import { mockChinaMirrors } from "./support";
 
 function sampleWav() {
   const wav = Buffer.alloc(44 + 8000);
@@ -24,20 +25,24 @@ test("Pages subdirectory reloads offline and cold-loads local conversion engines
   const errors: string[] = [];
   const externalRequests: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  page.on("request", (request) => {
-    if (/^https?:/.test(request.url()) && new URL(request.url()).origin !== "http://localhost:4174")
+  context.on("request", (request) => {
+    if (/^https?:/.test(request.url()) && new URL(request.url()).origin !== "http://localhost:4186"
+      && !["registry.npmmirror.com", "cdn.npmmirror.com"].includes(new URL(request.url()).hostname))
       externalRequests.push(request.url());
   });
   await page.addInitScript(() => localStorage.setItem("birchize-onboarding-v1", "seen"));
+  await mockChinaMirrors(context);
   await page.goto("./#images");
   await expect(page.locator('.sidebar .brand')).toContainText("Birchize");
   await expect(page.locator('input[type="file"]')).toBeAttached();
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => undefined));
   await page.waitForFunction(() => navigator.serviceWorker.controller?.state === "activated");
+  await expect(page.locator(".offline-label")).toHaveText("已就绪，可离线使用", { timeout: 60_000 });
   expect(await page.evaluate(async () => (await navigator.serviceWorker.ready).scope))
-    .toBe("http://localhost:4174/Birchize/");
+    .toBe("http://localhost:4186/Birchize/");
 
   // From here on, every page, lazy module, worker and WASM must load offline.
+  await context.unrouteAll();
   await context.setOffline(true);
   await page.reload();
   await expect(page.locator('input[type="file"]')).toBeAttached();
